@@ -1,0 +1,45 @@
+--1. Get the actual datalengths
+--2. Set all datalenths to MAX
+--3. Run import
+--4. If successfull import run the real datalenth alter
+--5. Update the column that fails manually and in tst and prod
+
+--GET REAL DATALENGTHS
+SELECT
+    t.name, s.name, c.name,
+    'ALTER TABLE ' + s.name + '.' + t.Name + ' ALTER COLUMN [' + c.name +  '] ' + ty.name + '(' + 
+        CASE 
+            WHEN c.max_length = -1 THEN 'MAX)'
+            ELSE IIF(ty.Name = 'NCHAR' OR ty.Name = 'NVARCHAR', CAST(c.max_length/2 AS VARCHAR(10)), CAST(c.max_length AS VARCHAR(10))) + ')'
+        END
+FROM
+    sys.tables t
+INNER JOIN 
+    sys.schemas s ON t.schema_id = s.schema_id
+INNER JOIN 
+    sys.columns c ON c.object_id = t.object_id
+INNER JOIN 
+    sys.types ty ON c.system_type_id = ty.system_type_id
+WHERE
+    (ty.name = 'NVARCHAR' OR ty.Name = 'VARCHAR' OR ty.Name = 'NCHAR') AND 
+	s.name = 'SP' AND (t.name = 'ODGCommunitiesPriorities' OR T.name = 'ODGCommunitiesPriorities_audit')
+    AND c.is_computed = 0
+ORDER BY T.Name, c.Name
+
+--CHANGE DATALENGTHS TO MAX
+SELECT
+    t.name, s.name, c.name,
+    'ALTER TABLE ' + s.name + '.' + t.Name + ' ALTER COLUMN [' + c.name + '] NVARCHAR(MAX)'
+FROM
+    sys.tables t
+INNER JOIN 
+    sys.schemas s ON t.schema_id = s.schema_id
+INNER JOIN 
+    sys.columns c ON c.object_id = t.object_id
+INNER JOIN 
+    sys.types ty ON c.system_type_id = ty.system_type_id
+WHERE
+    (ty.name = 'NVARCHAR' OR ty.Name = 'VARCHAR' OR ty.Name = 'NCHAR') AND 
+	s.name = 'SP' AND (t.name = 'ODGCommunitiesPriorities' OR T.name = 'ODGCommunitiesPriorities_audit')
+    AND c.is_computed = 0
+ORDER BY T.Name, c.Name
