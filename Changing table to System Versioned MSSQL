@@ -1,0 +1,8 @@
+SELECT 'ALTER TABLE ' + tc.TABLE_SCHEMA + '.' + tc.TABLE_NAME 
+                                       + ' ADD SysStartDate DATETIME2 GENERATED ALWAYS AS ROW START NOT NULL DEFAULT SYSUTCDATETIME(), SysEndDate DATETIME2 GENERATED ALWAYS AS ROW END NOT NULL DEFAULT CAST(''9999-12-31 23:59:59.9999999'' AS datetime2), PERIOD FOR SYSTEM_TIME (SysStartDate,SysEndDate);' + CHAR(13)
+                                       + ' ALTER TABLE ' + tc.TABLE_SCHEMA + '.' + tc.TABLE_NAME + ' SET (SYSTEM_VERSIONING = ON (HISTORY_TABLE = ' + tc.TABLE_SCHEMA + '.' + tc.TABLE_NAME + '_Audit));'
+                                FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
+                                WHERE tc.TABLE_SCHEMA IN ('FN')
+                                AND tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
+                                AND tc.TABLE_NAME NOT LIKE '%\_audit' {ESCAPE '\'}
+                                AND tc.TABLE_NAME NOT IN (select  name FROM sys.tables WHERE SCHEMA_NAME(schema_id) = 'FN' AND temporal_type = 2)
